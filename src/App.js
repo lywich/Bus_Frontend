@@ -13,8 +13,6 @@ import {
 
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 
@@ -38,7 +36,6 @@ function App() {
   const [geojsonVersion, setGeojsonVersion] = useState(0); // force GeoJSON rerender
 
   const [loading, setLoading] = useState(false);
-  const [isVehMode, setIsVehMode] = useState(true); // toggle between modes
 
   const [vehRefInput, setVehRefInput] = useState(null);
   const [vehicleOptions, setVehicleOptions] = useState([]);
@@ -52,6 +49,7 @@ function App() {
   const [center] = useState(defaultCenter);
   const mapRef = useRef();
 
+  // Pop up details
   const onEachFeature = (feature, layer) => {
     if (feature.properties) {
       const {
@@ -78,199 +76,212 @@ function App() {
     }
   };
 
-  useEffect(() => {
-    if (!vehRef) return;
-
-    setLoading(true);
-    setGeojson(null);
-
-    const cacheKey = getCacheKey("vehRef", vehRef);
-    const cached = localStorage.getItem(cacheKey);
-    const now = Date.now();
-
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (now - parsed.timestamp < CACHE_TTL) {
-          setGeojson(parsed.data);
-          setGeojsonVersion((v) => v + 1);
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        setGeojson(null);
-        setLoading(false);
-        console.error("Failed to parse data in cache:", err);
-      }
-    }
-
-    fetchSpecificBusTrip(vehRef)
-      .then((response) => {
-        const data = response.data;
-        if (data.features && data.features.length > 0) {
-          setGeojson(data);
-          setGeojsonVersion((v) => v + 1);
-          localStorage.setItem(
-            cacheKey,
-            JSON.stringify({ data, timestamp: Date.now() })
-          );
-        } else {
-          throw new Error("Invalid GeoJSON Response");
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching GeoJSON:", error);
-        setGeojson(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [vehRef]);
-
-  useEffect(() => {
-    if (!publicRef) return;
-
-    setLoading(true);
-    setGeojson(null);
-
-    const cacheKey = getCacheKey("publicRef", publicRef);
-    const cached = localStorage.getItem(cacheKey);
-    const now = Date.now();
-
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (now - parsed.timestamp < CACHE_TTL) {
-          setGeojson(parsed.data);
-          setGeojsonVersion((v) => v + 1);
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        setGeojson(null);
-        setLoading(false);
-        console.error("Failed to parse cache:", err);
-      }
-    }
-
-    fetchSpecificBusRoute(publicRef)
-      .then((response) => {
-        const data = response.data;
-        if (data.features && data.features.length > 0) {
-          setGeojson(data);
-          setGeojsonVersion((v) => v + 1);
-          localStorage.setItem(
-            cacheKey,
-            JSON.stringify({ data, timestamp: Date.now() })
-          );
-        } else {
-          throw new Error("Invalid GeoJSON Response");
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching GeoJSON:", error);
-        setGeojson(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [publicRef]);
-
+  // Get all bus and line numbers on start up
   useEffect(() => {
     const fetchOptions = async () => {
+      setLoading(true);
       try {
         const [vehRes, pubRes] = await Promise.all([
           fetchVehicleRefs(),
           fetchPublicRefs(),
         ]);
-
-        const vehicleData = vehRes.data.map((item) =>
-          typeof item === "string" ? { label: item } : item
+        setVehicleOptions(
+          vehRes.data.map((item) =>
+            typeof item === "string" ? { label: item } : item
+          )
         );
-        const publicData = pubRes.data.map((item) =>
-          typeof item === "string" ? { label: item } : item
+        setPublicRefOptions(
+          pubRes.data.map((item) =>
+            typeof item === "string" ? { label: item } : item
+          )
         );
-
-        setVehicleOptions(vehicleData);
-        setPublicRefOptions(publicData);
       } catch (error) {
-        console.error("Error fetching vehicle/public refs:", error);
+        console.error("Error fetching refs:", error);
         setVehicleOptions([]);
         setPublicRefOptions([]);
+      } finally {
+        setLoading(false);
       }
     };
+    fetchOptions();
+  }, []);
+
+  // Fetch GeoJSON when vehRef or publicRef changes
+  useEffect(() => {
+    if (!vehRef && !publicRef) {
+      setGeojson(null);
+      return;
+    }
 
     setLoading(true);
-    fetchOptions();
-    setLoading(false);
-  }, []);
+    setGeojson(null);
+
+    // If vehRef is queried, fetch vehicle ref API, then filter by publicRef if set
+    // Else if only publicRef set, fetch by publicRef API
+    if (vehRef) {
+      const cacheKey = getCacheKey("vehRef", vehRef);
+      const cached = localStorage.getItem(cacheKey);
+      const now = Date.now();
+
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (now - parsed.timestamp < CACHE_TTL) {
+            let filteredData = parsed.data;
+            if (publicRef) {
+              filteredData = {
+                ...parsed.data,
+                features: parsed.data.features.filter(
+                  (feature) =>
+                    feature.properties?.PublishedLineName === publicRef
+                ),
+              };
+            }
+            setGeojson(filteredData);
+            setGeojsonVersion((v) => v + 1);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to parse cache:", err);
+        }
+      }
+
+      fetchSpecificBusTrip(vehRef)
+        .then((response) => {
+          let data = response.data;
+          if (publicRef) {
+            data = {
+              ...data,
+              features: data.features.filter(
+                (feature) =>
+                  feature.properties?.PublishedLineName === publicRef
+              ),
+            };
+          }
+          if (data.features && data.features.length > 0) {
+            setGeojson(data);
+            setGeojsonVersion((v) => v + 1);
+            localStorage.setItem(
+              cacheKey,
+              JSON.stringify({ data: response.data, timestamp: Date.now() })
+            );
+          } else {
+            throw new Error("No matching features after filtering");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching GeoJSON:", error);
+          setGeojson(null);
+        })
+        .finally(() => setLoading(false));
+    } else if (publicRef) {
+      // Only publicRef set, fetch by publicRef API
+      const cacheKey = getCacheKey("publicRef", publicRef);
+      const cached = localStorage.getItem(cacheKey);
+      const now = Date.now();
+
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (now - parsed.timestamp < CACHE_TTL) {
+            setGeojson(parsed.data);
+            setGeojsonVersion((v) => v + 1);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to parse cache:", err);
+        }
+      }
+
+      fetchSpecificBusRoute(publicRef)
+        .then((response) => {
+          const data = response.data;
+          if (data.features && data.features.length > 0) {
+            setGeojson(data);
+            setGeojsonVersion((v) => v + 1);
+            localStorage.setItem(
+              cacheKey,
+              JSON.stringify({ data, timestamp: Date.now() })
+            );
+          } else {
+            throw new Error("Invalid GeoJSON Response");
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching GeoJSON:", error);
+          setGeojson(null);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [vehRef, publicRef]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const selectedInput = isVehMode ? vehRefInput : publicRefInput;
+    const vehValue = vehRefInput && (typeof vehRefInput === "string" ? vehRefInput : vehRefInput.label);
 
-    if (!selectedInput) return;
+    const pubValue = publicRefInput && (typeof publicRefInput === "string" ? publicRefInput : publicRefInput.label);
 
-    const selectedValue =
-      typeof selectedInput === "string"
-        ? selectedInput
-        : selectedInput.label;
+    if (!vehValue && !pubValue) return; // empty input, do not do anything on submit
 
-    if (isVehMode) {
-      setVehRef(selectedValue);
-      setPublicRef(null);
+    if (vehValue) {
+      setVehRef(vehValue);
+      setPublicRef(pubValue || null);
     } else {
-      setPublicRef(selectedValue);
       setVehRef(null);
+      setPublicRef(pubValue);
     }
   };
 
   return (
-    <div className="map-wrapper">
+    <div className="map-wrapper" style={{ height: "100vh", width: "100%" }}>
       <form onSubmit={handleSubmit} className="veh-ref-form">
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <ToggleButtonGroup
-            value={isVehMode ? "vehicle" : "public"}
-            exclusive
-            onChange={(e, newValue) => {
-              if (newValue !== null) {
-                setIsVehMode(newValue === "vehicle");
-              }
-            }}
-            aria-label="Reference Type Toggle"
-          >
-            <ToggleButton value="vehicle" aria-label="vehicle ref">
-              Vehicle Ref
-            </ToggleButton>
-            <ToggleButton value="public" aria-label="public ref">
-              Public Ref
-            </ToggleButton>
-          </ToggleButtonGroup>
-
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
           <Autocomplete
             disablePortal
-            options={isVehMode ? vehicleOptions : publicRefOptions}
+            options={vehicleOptions}
             getOptionLabel={(option) =>
               typeof option === "string" ? option : option.label || ""
             }
-            value={isVehMode ? vehRefInput : publicRefInput}
-            onChange={(event, newValue) => {
-              isVehMode
-                ? setVehRefInput(newValue)
-                : setPublicRefInput(newValue);
-            }}
+            value={vehRefInput}
+            onChange={(e, newValue) => setVehRefInput(newValue)}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label={isVehMode ? "Enter vehicle ref..." : "Enter public ref..."}
+                label="Enter Vehicle Ref (bus number)"
                 variant="outlined"
               />
             )}
             sx={{ width: 300 }}
             freeSolo
           />
-
+          <Autocomplete
+            disablePortal
+            options={publicRefOptions}
+            getOptionLabel={(option) =>
+              typeof option === "string" ? option : option.label || ""
+            }
+            value={publicRefInput}
+            onChange={(e, newValue) => setPublicRefInput(newValue)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Enter Public Ref (route)"
+                variant="outlined"
+              />
+            )}
+            sx={{ width: 300 }}
+            freeSolo
+          />
           <Button type="submit" variant="contained" color="primary">
             Submit
           </Button>
@@ -278,12 +289,15 @@ function App() {
       </form>
 
       {!loading && geojson === null && (vehRef || publicRef) && (
-        <p style={{ color: "red" }}>
-          No route data found for "{vehRef || publicRef}".
+        <p style={{ color: "red", paddingLeft: 10 }}>
+          No route data found for{" "}
+          {vehRef ? `VehicleRef: "${vehRef}"` : ""}
+          {vehRef && publicRef ? " and " : ""}
+          {publicRef ? `PublicRef: "${publicRef}"` : ""}
+          .
         </p>
       )}
 
-      {/* Map + spinner overlay container */}
       <div style={{ position: "relative", height: "100vh", width: "100%" }}>
         <MapContainer
           center={center}
