@@ -15,6 +15,8 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 import "./App.css";
 
@@ -36,6 +38,9 @@ function App() {
   const [geojsonVersion, setGeojsonVersion] = useState(0); // force GeoJSON rerender
 
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showError, setShowError] = useState(false);
+
 
   const [vehRefInput, setVehRefInput] = useState(null);
   const [vehicleOptions, setVehicleOptions] = useState([]);
@@ -137,8 +142,17 @@ function App() {
                 ),
               };
             }
-            setGeojson(filteredData);
-            setGeojsonVersion((v) => v + 1);
+            if (filteredData.features && filteredData.features.length > 0) {
+              setGeojson(filteredData);
+              setGeojsonVersion((v) => v + 1);
+            } else {
+              setGeojson(null);
+              setErrorMessage(
+                `No route data found for VehicleRef "${vehRef}"` +
+                (publicRef ? ` with PublicRef "${publicRef}"` : "")
+              );
+              setShowError(true);
+            }
             setLoading(false);
             return;
           }
@@ -167,11 +181,13 @@ function App() {
               JSON.stringify({ data: response.data, timestamp: Date.now() })
             );
           } else {
-            throw new Error("No matching features after filtering");
+            throw new Error("No matching features after filtering for Bus Number");
           }
         })
         .catch((error) => {
           console.error("Error fetching GeoJSON:", error);
+          setErrorMessage("Error fetching data for Bus Number.");
+          setShowError(true);
           setGeojson(null);
         })
         .finally(() => setLoading(false));
@@ -206,11 +222,13 @@ function App() {
               JSON.stringify({ data, timestamp: Date.now() })
             );
           } else {
-            throw new Error("Invalid GeoJSON Response");
+            throw new Error("No matching features after filtering for Bus Route");
           }
         })
         .catch((error) => {
           console.error("Error fetching GeoJSON:", error);
+          setErrorMessage("Error fetching data for Bus Route.");
+          setShowError(true);
           setGeojson(null);
         })
         .finally(() => setLoading(false));
@@ -221,7 +239,6 @@ function App() {
     e.preventDefault();
 
     const vehValue = vehRefInput && (typeof vehRefInput === "string" ? vehRefInput : vehRefInput.label);
-
     const pubValue = publicRefInput && (typeof publicRefInput === "string" ? publicRefInput : publicRefInput.label);
 
     if (!vehValue && !pubValue) return; // empty input, do not do anything on submit
@@ -288,15 +305,16 @@ function App() {
         </div>
       </form>
 
-      {!loading && geojson === null && (vehRef || publicRef) && (
-        <p style={{ color: "red", paddingLeft: 10 }}>
-          No route data found for{" "}
-          {vehRef ? `VehicleRef: "${vehRef}"` : ""}
-          {vehRef && publicRef ? " and " : ""}
-          {publicRef ? `PublicRef: "${publicRef}"` : ""}
-          .
-        </p>
-      )}
+      <Snackbar
+        open={showError}
+        autoHideDuration={4000}
+        onClose={() => setShowError(false)}
+        anchorOrigin={{ vertical: "bot", horizontal: "right" }}
+      >
+        <Alert onClose={() => setShowError(false)} severity="error" sx={{ width: "100%" }}>
+          {errorMessage}
+        </Alert>
+      </Snackbar>
 
       <div style={{ position: "relative", height: "100vh", width: "100%" }}>
         <MapContainer
