@@ -17,6 +17,9 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+
 
 import "./App.css";
 
@@ -40,7 +43,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showError, setShowError] = useState(false);
-
+  const [formVisible, setFormVisible] = useState(true);
 
   const [vehRefInput, setVehRefInput] = useState(null);
   const [vehicleOptions, setVehicleOptions] = useState([]);
@@ -53,6 +56,10 @@ function App() {
   const defaultCenter = [40.705808, -73.809474];
   const [center] = useState(defaultCenter);
   const mapRef = useRef();
+
+  const toggleForm = () => {
+    setFormVisible((visible) => !visible);
+  };
 
   // Pop up details
   const onEachFeature = (feature, layer) => {
@@ -254,7 +261,35 @@ function App() {
 
   return (
     <div className="map-wrapper" style={{ height: "100vh", width: "100%" }}>
-      <form onSubmit={handleSubmit} className="veh-ref-form">
+      <button
+        onClick={toggleForm}
+        style={{
+          position: "absolute",
+          top: 100,
+          right: 10,
+          zIndex: 1100,
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          border: "none",
+          backgroundColor: "#61dafb",
+          color: "#282c34",
+          fontWeight: "bold",
+          fontSize: "1.2rem",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          transition: "background-color 0.3s ease",
+          userSelect: "none",
+        }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#21a1f1"}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#61dafb"}
+      >
+        {formVisible ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+      </button>
+
+      <form onSubmit={handleSubmit} className={`veh-ref-form ${formVisible ? "slide-in" : "slide-out-right"}`}>
         <div
           style={{
             display: "flex",

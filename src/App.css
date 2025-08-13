@@ -1,5 +1,13 @@
+/* Prevent horizontal scrolling on the whole page */
+body, html, #root {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
 .App {
   text-align: center;
+  overflow-x: hidden;
 }
 
 .App-logo {
@@ -48,12 +56,30 @@
   right: 10px;
   z-index: 1000;
   display: flex;
-  align-items: center; /* vertically center */
+  align-items: center;
   gap: 0.5rem;
   background-color: white;
   padding: 0.5rem;
   border-radius: 4px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.veh-ref-form.slide-in {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.veh-ref-form.slide-out-right {
+  transform: translateX(150%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .submit-btn {
