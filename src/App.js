@@ -16,6 +16,7 @@ import TextField from "@mui/material/TextField";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 
 import "./App.css";
 
@@ -51,7 +52,32 @@ function App() {
   const [center] = useState(defaultCenter);
   const mapRef = useRef();
 
-  // Fetch geojson data based on vehicle ref with caching
+  const onEachFeature = (feature, layer) => {
+    if (feature.properties) {
+      const {
+        VehicleRef,
+        PublishedLineName,
+        DirectionRef,
+        OriginName,
+        DestinationName,
+        StartTime,
+        EndTime,
+      } = feature.properties;
+
+      let popupContent = `
+        <b>Vehicle Ref:</b> ${VehicleRef || "N/A"}<br/>
+        <b>Line Name:</b> ${PublishedLineName || "N/A"}<br/>
+        <b>Direction:</b> ${DirectionRef || "N/A"}<br/>
+        <b>Origin:</b> ${OriginName || "N/A"}<br/>
+        <b>Destination:</b> ${DestinationName || "N/A"}<br/>
+        <b>Start Time:</b> ${StartTime || "N/A"}<br/>
+        <b>End Time:</b> ${EndTime || "N/A"}<br/>
+        <hr/>
+      `;
+      layer.bindPopup(popupContent);
+    }
+  };
+
   useEffect(() => {
     if (!vehRef) return;
 
@@ -69,7 +95,7 @@ function App() {
           setGeojson(parsed.data);
           setGeojsonVersion((v) => v + 1);
           setLoading(false);
-          return; // Use data in cache, skip fetching API
+          return;
         }
       } catch (err) {
         setGeojson(null);
@@ -101,7 +127,6 @@ function App() {
       });
   }, [vehRef]);
 
-  // Fetch geojson data based on public ref with caching
   useEffect(() => {
     if (!publicRef) return;
 
@@ -119,7 +144,7 @@ function App() {
           setGeojson(parsed.data);
           setGeojsonVersion((v) => v + 1);
           setLoading(false);
-          return; // Use data in cache, skip fetching API
+          return;
         }
       } catch (err) {
         setGeojson(null);
@@ -151,7 +176,6 @@ function App() {
       });
   }, [publicRef]);
 
-  // Fetch data for autocomplete and dropdown box on start up
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -176,7 +200,9 @@ function App() {
       }
     };
 
+    setLoading(true);
     fetchOptions();
+    setLoading(false);
   }, []);
 
   const handleSubmit = (e) => {
@@ -230,7 +256,9 @@ function App() {
             }
             value={isVehMode ? vehRefInput : publicRefInput}
             onChange={(event, newValue) => {
-              isVehMode ? setVehRefInput(newValue) : setPublicRefInput(newValue);
+              isVehMode
+                ? setVehRefInput(newValue)
+                : setPublicRefInput(newValue);
             }}
             renderInput={(params) => (
               <TextField
@@ -249,37 +277,59 @@ function App() {
         </div>
       </form>
 
-      {loading && <p>Loading map data...</p>}
       {!loading && geojson === null && (vehRef || publicRef) && (
         <p style={{ color: "red" }}>
           No route data found for "{vehRef || publicRef}".
         </p>
       )}
 
-      <MapContainer
-        center={center}
-        zoom={13}
-        style={{ height: "100vh", width: "100%" }}
-        scrollWheelZoom={true}
-        whenCreated={(mapInstance) => {
-          mapRef.current = mapInstance;
-        }}
-      >
-        <TileLayer
-          attribution="&copy; OpenStreetMap contributors"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        {geojson && (
-          <GeoJSON
-            data={geojson}
-            key={`${vehRef || publicRef}-${geojsonVersion}`} // forces rerender
-            pointToLayer={(feature, latlng) =>
-              L.marker(latlng, { icon: customMarkerIcon })
-            }
+      {/* Map + spinner overlay container */}
+      <div style={{ position: "relative", height: "100vh", width: "100%" }}>
+        <MapContainer
+          center={center}
+          zoom={13}
+          style={{ height: "100%", width: "100%" }}
+          scrollWheelZoom={true}
+          whenCreated={(mapInstance) => {
+            mapRef.current = mapInstance;
+          }}
+        >
+          <TileLayer
+            attribution="&copy; OpenStreetMap contributors"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
+          {geojson && (
+            <GeoJSON
+              data={geojson}
+              key={`${vehRef || publicRef}-${geojsonVersion}`}
+              pointToLayer={(feature, latlng) =>
+                L.marker(latlng, { icon: customMarkerIcon })
+              }
+              onEachFeature={onEachFeature}
+            />
+          )}
+        </MapContainer>
+
+        {loading && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              height: "100%",
+              width: "100%",
+              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 1000,
+            }}
+          >
+            <CircularProgress />
+          </div>
         )}
-      </MapContainer>
+      </div>
     </div>
   );
 }
