@@ -3,6 +3,7 @@ import axios from "axios";
 const BASE_URL = "https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip";
 
 export const fetchServerStatus = () => {
+	console.log("Fetching server status");
   return axios.get(`${BASE_URL}/ready`);
 };
 

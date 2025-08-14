@@ -9,6 +9,7 @@ import {
   fetchPublicRefs,
   fetchSpecificBusTrip,
   fetchSpecificBusRoute,
+  fetchServerStatus,
 } from "./ApiService";
 
 import Autocomplete from "@mui/material/Autocomplete";
@@ -91,6 +92,13 @@ function App() {
   useEffect(() => {
     const fetchOptions = async () => {
       setLoading(true);
+      const status = await fetchServerStatus();
+      if (status.data.status !== "Ready") {
+        console.error("Server is down");
+        setErrorMessage("Server is down. Please try again later");
+        setShowError(true);
+        return;
+      }
       try {
         const [vehRes, pubRes] = await Promise.all([
           fetchVehicleRefs(),
