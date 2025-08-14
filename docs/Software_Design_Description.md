@@ -44,7 +44,7 @@ sequenceDiagram
         API-->>Website: response data
         Website->>Website: filter data by publicRef if set
         alt filtered features exist
-            Website->>Website: render GeoJson data
+            Website->>Website: render GeoJson data and cache new data
         else no features after filter
             Website->>Website: show error message
         end
@@ -78,7 +78,7 @@ sequenceDiagram
         Website->>API: fetchSpecificBusRoute(publicRef)
         API-->>Website: response data
         alt features exist
-            Website->>Website: render GeoJson data
+            Website->>Website: render GeoJson data and cache new data
         else no features
             Website->>Website: show error message
         end
