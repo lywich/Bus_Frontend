@@ -20,6 +20,7 @@ To access the API endpoints, you may either paste the links in your browser or r
 ```https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getBusTripByVehRef/NYCT_XXXX```
 
 Replace XXXX with a valid Vehicle ref number
+
 E.g. 
 
 ```https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getBusTripByVehRef/NYCT_4616```
@@ -30,6 +31,7 @@ E.g.
 ```https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getBusTripByVehRef/XXX```
 
 Replace XXX with a valid Public Line name
+
 E.g. 
 
 ```https://nyc-bus-engine-k3q4yvzczq-an.a.run.app/api/bus_trip/getBusTripByPubLineName/Bx2```
