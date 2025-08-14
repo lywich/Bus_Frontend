@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import MarkerImage from "./red-map-pin-icon-png.webp";
@@ -36,6 +36,22 @@ function getCacheKey(type, ref) {
   return `geojson-cache-${type}-${ref}`;
 }
 
+// https://stackoverflow.com/questions/65322670/change-center-position-of-react-leaflet-map
+function MapCenter({ geojson }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (geojson && geojson.features?.length > 0) {
+      const bounds = L.geoJSON(geojson).getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      }
+    }
+  }, [geojson, map]);
+
+  return null;
+}
+
 function App() {
   const [geojson, setGeojson] = useState(null); // geo data
   const [geojsonVersion, setGeojsonVersion] = useState(0); // force GeoJSON rerender
@@ -55,7 +71,6 @@ function App() {
 
   const defaultCenter = [40.705808, -73.809474];
   const [center] = useState(defaultCenter);
-  const mapRef = useRef();
 
   const toggleForm = () => {
     setFormVisible((visible) => !visible);
@@ -333,9 +348,6 @@ function App() {
           zoom={13}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom={true}
-          whenCreated={(mapInstance) => {
-            mapRef.current = mapInstance;
-          }}
         >
           <TileLayer
             attribution="&copy; OpenStreetMap contributors"
@@ -352,6 +364,7 @@ function App() {
               onEachFeature={onEachFeature}
             />
           )}
+          <MapCenter geojson={geojson} />
         </MapContainer>
 
         {loading && (
