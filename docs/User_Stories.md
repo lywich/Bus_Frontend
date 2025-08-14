@@ -12,3 +12,6 @@
 |User|I want to be able to move the map around with my cursor| So that I can easily view the map however I want|
 |User|I want to be able to zoom in and out of the map| So that I can easily view the map however I want|
 |User|I want to be able to know if the web app is loading| So that I know that the website has not crashed|
+|User|I want to have specific points on the map annotated | So that I can clearly see where the exact points are|
+|User|I want to be able to click on specific points on the map | So that I can see the specific details of each specific points on the map|
+
