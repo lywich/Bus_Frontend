@@ -20,7 +20,6 @@ import Alert from "@mui/material/Alert";
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
-
 import "./App.css";
 
 const customMarkerIcon = L.icon({
@@ -84,7 +83,7 @@ function App() {
         <b>End Time:</b> ${EndTime || "N/A"}<br/>
         <hr/>
       `;
-      layer.bindPopup(popupContent);
+      layer.bindPopup(popupContent); // https://gis.stackexchange.com/questions/229723/displaying-properties-of-geojson-in-popup-on-leaflet
     }
   };
 
@@ -261,43 +260,12 @@ function App() {
 
   return (
     <div className="map-wrapper" style={{ height: "100vh", width: "100%" }}>
-      <button
-        onClick={toggleForm}
-        style={{
-          position: "absolute",
-          top: 100,
-          right: 10,
-          zIndex: 1100,
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          border: "none",
-          backgroundColor: "#61dafb",
-          color: "#282c34",
-          fontWeight: "bold",
-          fontSize: "1.2rem",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-          transition: "background-color 0.3s ease",
-          userSelect: "none",
-        }}
-        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#21a1f1"}
-        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#61dafb"}
-      >
+      <button onClick={toggleForm} className="toggle-button" >
         {formVisible ? <ChevronRightIcon /> : <ChevronLeftIcon />}
       </button>
 
       <form onSubmit={handleSubmit} className={`veh-ref-form ${formVisible ? "slide-in" : "slide-out-right"}`}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "1rem",
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="flex-container">
           <Autocomplete
             disablePortal
             options={vehicleOptions}
@@ -379,20 +347,7 @@ function App() {
         </MapContainer>
 
         {loading && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              height: "100%",
-              width: "100%",
-              backgroundColor: "rgba(255, 255, 255, 0.7)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 1000,
-            }}
-          >
+          <div className="overlay">
             <CircularProgress />
           </div>
         )}
