@@ -13,6 +13,8 @@ sequenceDiagram
 
 ## 2. vehRef input is given with valid cache
 
+:exclamation: It is important to note that when both vehRef and publicRef is present, we will call the API for vehRef first before filtering. This is because the former tends to have lesser data and hence have better latency. This also means that you will not have data for publicRef cached if you search this way.
+
 ```mermaid 
 sequenceDiagram
     participant Website
