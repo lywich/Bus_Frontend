@@ -42,8 +42,10 @@ function MapCenter({ geojson }) {
 
   useEffect(() => {
     if (geojson && geojson.features?.length > 0) {
+      console.log("GeoJSON is valid");
       const bounds = L.geoJSON(geojson).getBounds();
       if (bounds.isValid()) {
+        console.log("Centering map");
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
       }
     }
@@ -114,16 +116,21 @@ function App() {
         setShowError(true);
         return;
       }
+
+      console.log("Server is up");
+
       try {
         const [vehRes, pubRes] = await Promise.all([
           fetchVehicleRefs(),
           fetchPublicRefs(),
         ]);
+
         setVehicleOptions(
           vehRes.data.map((item) =>
             typeof item === "string" ? { label: item } : item
           )
         );
+
         setPublicRefOptions(
           pubRes.data.map((item) =>
             typeof item === "string" ? { label: item } : item
@@ -153,16 +160,20 @@ function App() {
     // If vehRef is queried, fetch vehicle ref API, then filter by publicRef if set
     // Else if only publicRef set, fetch by publicRef API
     if (vehRef) {
+      console.log("Vehicle ref is provided");
       const cacheKey = getCacheKey("vehRef", vehRef);
       const cached = localStorage.getItem(cacheKey);
       const now = Date.now();
 
       if (cached) {
+        console.log("Cached data is found");
         try {
           const parsed = JSON.parse(cached);
           if (now - parsed.timestamp < CACHE_TTL) {
+            console.log("Cached data is valid");
             let filteredData = parsed.data;
             if (publicRef) {
+              console.log("Public ref is provided");
               filteredData = {
                 ...parsed.data,
                 features: parsed.data.features.filter(
@@ -194,6 +205,7 @@ function App() {
         .then((response) => {
           let data = response.data;
           if (publicRef) {
+            console.log("Public ref is provided");
             data = {
               ...data,
               features: data.features.filter(
@@ -222,14 +234,17 @@ function App() {
         .finally(() => setLoading(false));
     } else if (publicRef) {
       // Only publicRef set, fetch by publicRef API
+      console.log("Public ref is provided");
       const cacheKey = getCacheKey("publicRef", publicRef);
       const cached = localStorage.getItem(cacheKey);
       const now = Date.now();
 
       if (cached) {
+        console.log("Cached data is found");
         try {
           const parsed = JSON.parse(cached);
           if (now - parsed.timestamp < CACHE_TTL) {
+            console.log("Cached data is valid")
             setGeojson(parsed.data);
             setGeojsonVersion((v) => v + 1);
             setLoading(false);

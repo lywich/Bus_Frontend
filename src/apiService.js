@@ -8,12 +8,12 @@ export const fetchServerStatus = () => {
 };
 
 export const fetchVehicleRefs = () => {
-    console.log("Fetching all bus number");
+    console.log("Fetching all bus numbers");
     return axios.get(`${BASE_URL}/getVehRef`);
 };
 
 export const fetchSpecificBusTrip = (vehRef) => {
-    console.log("Fetching specific bus number trip");
+    console.log("Fetching specific bus number trip: " + vehRef);
     return axios.get(`${BASE_URL}/getBusTripByVehRef/${vehRef}`);
 };
 
@@ -23,6 +23,6 @@ export const fetchPublicRefs = () => {
 };
 
 export const fetchSpecificBusRoute = (publicRef) => {
-    console.log("Fetching specific bus route");
+    console.log("Fetching specific bus route: " + publicRef);
     return axios.get(`${BASE_URL}/getBusTripByPubLineName/${publicRef}`)
 };
