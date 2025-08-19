@@ -368,7 +368,7 @@ function App() {
         </MapContainer>
 
         {loading && (
-          <div className="overlay">
+          <div className="loading-overlay">
             <CircularProgress />
           </div>
         )}

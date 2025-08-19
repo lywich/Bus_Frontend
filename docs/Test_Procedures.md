@@ -2,6 +2,8 @@
 
 ## Test 1. Loading Works 
 
+Loading icon is shown when a new input is used. A new input refers to a query that has not been queried in the last 5 minutes.
+
 ## Test 2. Map Renders 
 
 ## Test 3. Search bar renders and input can be populated
